@@ -1,0 +1,22 @@
+# Independent TCG Atlas catalog and price-history service.
+services:
+  - type: web
+    name: tcg-atlas-data
+    runtime: node
+    region: singapore
+    rootDir: services/atlas-refresh
+    buildCommand: node --check server.mjs && node --check refresh.mjs
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    plan: 0.5c-512mb
+    disk:
+      name: atlas-catalog-history
+      mountPath: /var/data/atlas
+      sizeGB: 2
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATA_DIR
+        value: /var/data/atlas
+      - key: ATLAS_DATA_KEY
+        generateValue: true
