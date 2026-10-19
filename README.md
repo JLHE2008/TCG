@@ -1,19 +1,17 @@
-# TCG Atlas daily data service
+# TCG Atlas — free daily market updater
 
-An independent Node 22 service for English and Japanese Pokémon TCG market catalogs and source-dated price history. It makes no ChatGPT calls and does not require a ChatGPT subscription. This repository hosts updater code only; it does not host the TCG Atlas website.
+This public repository runs the **Refresh Atlas market data** GitHub Actions workflow daily at 22:00 UTC (06:00 Malaysia). It runs independently of ChatGPT and ChatGPT Plus. No Render service, paid runner, action artifact, dependency cache, API subscription or Site credential is used.
 
-## Deploy on Render
+Only public English/Japanese TCGCSV card identities, market quotes, source-dated FX and observations are saved here. Private wishlists, accounts and saved decks remain in the owner-private Atlas Site. Website hosting, graded PSA coverage, internal classification and tournament/deck discovery are separate from this market updater.
 
-Use **New → Blueprint**, select this repository, and use the root `render.yaml`. Review the selected workspace, compute plan, persistent disk and charges before deploying. The Blueprint uses Singapore, the `0.5c-512mb` compute plan, and a 2 GB persistent disk. Render generates the `ATLAS_DATA_KEY` secret. Keep it private.
+## Operation and recovery
 
-The timer refreshes daily at **06:00 Asia/Kuala_Lumpur**, catches up on startup, and retries failed runs. Only a complete successful refresh of both languages advances the published data pointer. Unpriced entries remain in the catalog. Source omissions retain the previous card identity, with old quotes excluded from new current prices. Historical gaps are never invented.
+Actions → Refresh Atlas market data → Run workflow starts a manual check. Scheduled jobs can be delayed or dropped by GitHub. GitHub can disable inactive public-repository schedules after 60 days; this workflow normally commits a daily check. Check Actions for failures and use Run workflow to retry. Atlas preserves its previous successful data if this feed is unavailable.
 
-## Verify and connect Atlas
+Both languages must finish before any new data is committed. Missing provider prices remain unpriced. Provider omissions retain the previous card with no asserted current quote. Exact printing variants and languages never borrow each other's prices. `data/manifest.json` reports sourceUpdated, checkedAt, counts and real observation dates. `data/daily/` retains each available original source-dated observation. Hash-addressed gzip blobs serve full catalogs and compact, gap-preserving price histories; no history is invented. A single Git commit publishes the complete feed. Ordinary refreshes never republish the website.
 
-`/health` is public and reports only process health. `/api/metadata`, `/api/catalog?source=market&language=en`, and `/api/history?language=en&id=t42404&variant=Holofoil&days=365` require `Authorization: Bearer <ATLAS_DATA_KEY>`. Verify saved counts and source dates before configuring Atlas with the server-only `ATLAS_DATA_URL` and secret `ATLAS_DATA_KEY`. Do not send Site bypass tokens, user accounts, wishlist data or private decks to this service.
+Daily comparisons require an observation on the exact comparison date. Currency conversion is source-dated FX, not another language's price. TCGCSV/TCGplayer quotes are market references, not guaranteed sale prices or future returns.
 
-Before cutover, migrate existing real observation files into the persistent disk's `history/` directory and merge the real dates in `history/dates.json`. Preserve the last successful Site snapshots and leave the old updater enabled until live readback passes. Site hosting, PSA coverage and player/deck updates remain separate.
+Source: https://tcgcsv.com/ . Free runner policy: https://docs.github.com/en/billing/concepts/product-billing/github-actions . Site connection: https://tcg-atlas.smokyoak.chatgpt.site .
 
-## Local checks
-
-From `services/atlas-refresh`, run `npm run check`. No dependencies are required. For local development, supply `ATLAS_DATA_KEY` with at least 32 random characters, a writable `DATA_DIR`, and `PORT` if desired. Never commit an environment file or secret.
+The first run fetches directly from the public provider; it does not export private Site storage. Earlier observations remain private in the Site, which merges them with this public feed at read time.
