@@ -1,8 +1,9 @@
 import {readFile,access} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 
 const HOUR=60*60*1000;
-export function auditManifest(manifest,{now=Date.now(),checkBlob=()=>Promise.resolve()}={}){
+export function auditManifest(manifest,{now=Date.now()}={}){
  const problems=[],warnings=[];
  if(!manifest||manifest.schema!==1||!manifest.metadata?.runComplete){
   return {ok:false,problems:['Missing or incomplete manifest'],warnings,stats:{}};
@@ -39,4 +40,4 @@ export async function main(root='data'){
  console.log(JSON.stringify({status:result.ok?'healthy':'unhealthy',...result},null,2));
  if(!result.ok)process.exitCode=1;
 }
-if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href)await main(process.argv[2]||'data');
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)await main(process.argv[2]||'data');
