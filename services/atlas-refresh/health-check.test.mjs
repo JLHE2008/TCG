@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {auditManifest} from './health-check.mjs';
+const now=Date.parse('2026-11-11T06:00:00Z');
+const sha='a'.repeat(64);
+const healthy=()=>({schema:1,metadata:{runComplete:true,checkedAt:new Date(now-3600000).toISOString(),sourceUpdated:new Date(now-7200000).toISOString(),history:{lastObserved:'2026-11-10'},market:{en:{cards:100,priced:90,unpriced:10,sets:2},ja:{cards:90,priced:80,unpriced:10,sets:3}},fx:{date:'2026-11-10'}},dates:['2026-11-10'],catalogs:{en:'blobs/'+sha+'.json.gz',ja:'blobs/'+sha+'.json.gz'},histories:{en:Object.fromEntries(Array.from({length:64},(_,i)=>[String(i).padStart(2,'0'),'blobs/'+sha+'.json.gz'])),ja:Object.fromEntries(Array.from({length:64},(_,i)=>[String(i).padStart(2,'0'),'blobs/'+sha+'.json.gz']))}});
+test('healthy feed remains healthy',()=>assert.equal(auditManifest(healthy(),{now}).ok,true));
+test('stale provider data fails',()=>{const m=healthy();m.metadata.sourceUpdated='2026-11-01T00:00:00Z';assert.equal(auditManifest(m,{now}).ok,false)});
+test('incomplete Japanese shards fail',()=>{const m=healthy();delete m.histories.ja['00'];assert.equal(auditManifest(m,{now}).ok,false)});
+test('mismatched catalog counts fail',()=>{const m=healthy();m.metadata.market.en.priced=99;assert.equal(auditManifest(m,{now}).ok,false)});
