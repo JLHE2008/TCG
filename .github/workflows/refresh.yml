@@ -24,9 +24,11 @@ jobs:
           node-version: '22'
           package-manager-cache: false
       - name: Check updater
-        run: node --test services/atlas-refresh/public-store.test.mjs
+        run: node --test services/atlas-refresh/*.test.mjs
       - name: Refresh complete catalogs and observations
         run: node services/atlas-refresh/run-public.mjs
+      - name: Validate published pricing freshness and completeness
+        run: node services/atlas-refresh/health-check.mjs data
       - name: Commit complete public data
         run: |
           git config user.name 'github-actions[bot]'
